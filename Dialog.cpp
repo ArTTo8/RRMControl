@@ -353,8 +353,6 @@ void Dialog::received(bool isReceived)
             sbSetOffset->setValue(m_DisplayList.value("OFFSET").toDouble());
         if (!sbSetGain->hasFocus())
             sbSetGain->setValue(m_DisplayList.value("GAIN").toDouble());
-        if (!sbSetTemp->hasFocus())
-            sbSetTemp->setValue(m_DisplayList.value("TEMP").toDouble());
     }
 }
 
