@@ -77,7 +77,6 @@ Dialog::Dialog(QWidget *parent) :
         m_BlinkTimeRxColor(new QTimer(this)),
         m_TimeToDisplay(new QTimer(this))
 {
-    initIsDataSet();
 
     bSetOffset->setMaximumSize(60, 30);
     bSetOffset->setMinimumSize(60, 30);
@@ -282,6 +281,8 @@ void Dialog::openPort()
 
         bPortStart->setEnabled(false);
         bPortStop->setEnabled(true);
+        cbBaud->setEnabled(false);
+        cbPort->setEnabled(false);
         lTx->setStyleSheet("background: none; font: bold; font-size: 10pt");
         lRx->setStyleSheet("background: none; font: bold; font-size: 10pt");
     }
@@ -320,9 +321,10 @@ void Dialog::closePort()
     lRx->setStyleSheet("background: yellow; font: bold; font-size: 10pt");
     bPortStop->setEnabled(false);
     bPortStart->setEnabled(true);
+    cbBaud->setEnabled(true);
+    cbPort->setEnabled(true);
     m_Protocol->resetProtocol();
 
-    initIsDataSet();
     m_lcdOffset->display("----");
     m_lcdGain->display("----");
     m_lcdTemp->display("---.--");
@@ -346,6 +348,13 @@ void Dialog::received(bool isReceived)
         }
 
         m_DisplayList = m_Protocol->getReadedData();
+
+        if (!sbSetOffset->hasFocus())
+            sbSetOffset->setValue(m_DisplayList.value("OFFSET").toDouble());
+        if (!sbSetGain->hasFocus())
+            sbSetGain->setValue(m_DisplayList.value("GAIN").toDouble());
+        if (!sbSetTemp->hasFocus())
+            sbSetTemp->setValue(m_DisplayList.value("TEMP").toDouble());
     }
 }
 
@@ -370,20 +379,14 @@ void Dialog::write(const Dialog::CODE &code)
         case 1:
             codeStr = QString::number(CODE_OFFSET);
             data = QString::number(sbSetOffset->value());
-            m_isDataSet.insert("OFFSET", true);
             break;
         case 2:
             codeStr = QString::number(CODE_GAIN);
             data = QString::number(sbSetGain->value());
-            m_isDataSet.insert("GAIN", true);
             break;
         case 3:
             codeStr = QString::number(CODE_TEMP);
             data = QString::number(sbSetTemp->value());
-            m_isDataSet.insert("TEMP", true);
-            break;
-        default:
-            codeStr = QString::number(NONE_DATA);
             break;
         }
         dataTemp.insert("CODE", codeStr);
@@ -490,20 +493,9 @@ void Dialog::displayData()
     QMap<QString, QLCDNumber*> list;
     QString tempStr;
 
-    if(!m_isDataSet.value("OFFSET")
-            && !m_isDataSet.value("GAIN")
-            && !m_isDataSet.value("TEMP")) {
-        return;
-    }
-    if(m_isDataSet.value("OFFSET")) {
-        list.insert("OFFSET", m_lcdOffset);
-    }
-    if(m_isDataSet.value("GAIN")) {
-        list.insert("GAIN", m_lcdGain);
-    }
-    if(m_isDataSet.value("TEMP")) {
-        list.insert("TEMP", m_lcdTemp);
-    }
+    list.insert("OFFSET", m_lcdOffset);
+    list.insert("GAIN", m_lcdGain);
+    list.insert("TEMP", m_lcdTemp);
 
     foreach (QString key, m_DisplayList.keys()) {
         if(list.contains(key)) {
@@ -512,31 +504,18 @@ void Dialog::displayData()
             if(key != "TEMP") {
 #undef PRECISION
 #define PRECISION 0
-                if (key == "GAIN")
-                    sbSetOffset->setValue(tempStr.toDouble());
-                if (key == "OFFSET")
-                    sbSetOffset->setValue(tempStr.toDouble());
             } else {
                 setColorLCD(list.value(key), tempStr.toDouble() > 0.0);
-
-                sbSetTemp->setValue(tempStr.toDouble());
             }
 
             if(list.value(key)->digitCount() < addTrailingZeros(tempStr, PRECISION).size())
             {
                 list[key]->display("ERR"); // Overflow
             } else {
-                list[key]->display(addTrailingZeros(tempStr, PRECISION));
+              list[key]->display(addTrailingZeros(tempStr, PRECISION));
             }
         }
     }
 
     m_DisplayList.clear();
-}
-
-void Dialog::initIsDataSet()
-{
-    m_isDataSet.insert("OFFSET", false);
-    m_isDataSet.insert("GAIN", false);
-    m_isDataSet.insert("TEMP", false);
 }

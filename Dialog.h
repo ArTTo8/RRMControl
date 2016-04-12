@@ -84,9 +84,6 @@ class Dialog : public QDialog
     QTimer *m_BlinkTimeRxColor;
     QTimer *m_TimeToDisplay;
 
-    QMap<QString, bool> m_isDataSet;
-    void initIsDataSet();
-
 private slots:
     void openPort();
     void closePort();
